@@ -12,7 +12,9 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-
+  MONGODB_URI: mongodb://adminUser:WizardingWorld@ubuntu@ip-10-0-8-165:27017
+  SECRET_KEY: 3380d0d9db455d0efc71bf6ff3c06583ec2c0f10baf99a088f4570f48536adc0
+   
 jobs:
   build-and-push-image:
     runs-on: ubuntu-latest

@@ -1,0 +1,27 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.x
+    commands:
+      - echo Installing dependencies...
+      - curl -o kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/1.29.0/2024-03-29/bin/linux/amd64/kubectl
+      - chmod +x ./kubectl
+      - mv ./kubectl /usr/local/bin/
+      - pip install --upgrade awscli
+
+  pre_build:
+    commands:
+      - echo Logging in to Amazon EKS...
+      - aws eks update-kubeconfig --region us-east-2 --name fabulous-jazz-potato
+
+  build:
+    commands:
+      - echo Applying IRSA service account...
+      - kubectl apply -f ecr-access-sa.yaml
+      - echo Deploying application to EKS...
+      - kubectl apply -f deployment.yml
+
+artifacts:
+  files: []

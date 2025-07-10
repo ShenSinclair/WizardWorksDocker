@@ -1,10 +1,24 @@
-# ----------------------
-# Deployment:
-# - Runs 2 replicas of the containerized Go app
-# - Uses IRSA-enabled service account `ecr-access-sa`
-# - Pulls the container from AWS ECR using the :latest tag
-# - Exposes port 3000 in the container
-# ----------------------
+# ----------------------------------------------------------------------------------
+# 1. ServiceAccount for IRSA:
+# - Allows pods to assume an IAM role to pull from Amazon ECR
+# - Make sure the role ARN matches the one with ECR pull permissions
+# ----------------------------------------------------------------------------------
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ecr-access-sa
+  namespace: default
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::108782097787:role/EKS_ECR_Access_IRSA_Role
+
+---
+# ----------------------------------------------------------------------------------
+# 2. Deployment:
+# - Runs 2 replicas of your Go application
+# - Uses the IRSA-enabled service account
+# - Pulls the image from ECR
+# - Exposes container port 3000
+# ----------------------------------------------------------------------------------
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -21,7 +35,7 @@ spec:
       labels:
         app: simple-docker-app
     spec:
-      serviceAccountName: ecr-access-sa  # IRSA-enabled service account linked to ECR pull permissions
+      serviceAccountName: ecr-access-sa
       containers:
         - name: simple-docker-app
           image: 108782097787.dkr.ecr.us-east-2.amazonaws.com/simple-docker-service-0a37c0e6438d:latest
@@ -39,12 +53,11 @@ spec:
               memory: "256Mi"
 
 ---
-# ----------------------
-# Service:
-# - Internal Kubernetes service that routes traffic to pods
-# - Exposes port 80 externally, which maps to container port 3000
-# - Type: NodePort (used behind an Ingress/ALB)
-# ----------------------
+# ----------------------------------------------------------------------------------
+# 3. Service:
+# - Exposes the pods on port 80 inside the cluster
+# - Uses NodePort for access via Ingress/Load Balancer
+# ----------------------------------------------------------------------------------
 apiVersion: v1
 kind: Service
 metadata:
@@ -60,12 +73,11 @@ spec:
   type: NodePort
 
 ---
-# ----------------------
-# Ingress:
-# - Creates an AWS Application Load Balancer (ALB)
-# - Routes HTTP traffic to the `simple-docker-service` on port 80
-# - Uses `alb` as the ingressClassName (ensure the ALB controller is installed)
-# ----------------------
+# ----------------------------------------------------------------------------------
+# 4. Ingress:
+# - Uses AWS ALB to expose the app publicly
+# - Requires AWS ALB Ingress Controller to be installed
+# ----------------------------------------------------------------------------------
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:

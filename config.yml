@@ -1,23 +1,34 @@
-# ----------------------------------------------------------------------------------
-# 1. ServiceAccount for IRSA:
-# - Allows pods to assume an IAM role to pull from Amazon ECR
-# - Make sure the role ARN matches the one with ECR pull permissions
-# ----------------------------------------------------------------------------------
+#K8s manifest file
+# 1. ServiceAccount - For identifying pods
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: ecr-access-sa
+  name: wiz-app-serviceaccount
   namespace: default
-  annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::108782097787:role/EKS_ECR_Access_IRSA_Role
+
+---
+# 2. ClusterRoleBinding - Grants cluster-admin permissions to the ServiceAccount
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: wiz-app-admin-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: wiz-app-serviceaccount
+    namespace: default
 
 ---
 # ----------------------------------------------------------------------------------
-# 2. Deployment:
-# - Runs 2 replicas of your Go application
-# - Uses the IRSA-enabled service account
-# - Pulls the image from ECR
-# - Exposes container port 3000
+# 3. Deployment
+# - Runs 2 replicas of the app
+# - Uses the above ServiceAccount
+# - Pulls image from ECR
+# - Loads environment variables from .env
 # ----------------------------------------------------------------------------------
 apiVersion: apps/v1
 kind: Deployment
@@ -35,7 +46,7 @@ spec:
       labels:
         app: simple-docker-app
     spec:
-      serviceAccountName: ecr-access-sa
+      serviceAccountName: wiz-app-serviceaccount
       containers:
         - name: simple-docker-app
           image: 108782097787.dkr.ecr.us-east-2.amazonaws.com/simple-docker-service-0a37c0e6438d:latest
@@ -44,6 +55,10 @@ spec:
           env:
             - name: PORT
               value: "3000"
+            - name: SECRET_KEY
+              value: "3380d0d9db455d0efc71bf6ff3c06583ec2c0f10baf99a088f4570f48536adc0"
+            - name: MONGODB_URI
+              value: "mongodb://adminUser:WizardingWorld@3.138.178.233:27017/admin"
           resources:
             requests:
               cpu: "100m"
@@ -54,9 +69,8 @@ spec:
 
 ---
 # ----------------------------------------------------------------------------------
-# 3. Service:
-# - Exposes the pods on port 80 inside the cluster
-# - Uses NodePort for access via Ingress/Load Balancer
+# 4. Service
+# - Exposes the app on NodePort for use with Ingress
 # ----------------------------------------------------------------------------------
 apiVersion: v1
 kind: Service
@@ -74,9 +88,7 @@ spec:
 
 ---
 # ----------------------------------------------------------------------------------
-# 4. Ingress:
-# - Uses AWS ALB to expose the app publicly
-# - Requires AWS ALB Ingress Controller to be installed
+# 5. Ingress (ALB) - Exposes app via Application Load Balancer
 # ----------------------------------------------------------------------------------
 apiVersion: networking.k8s.io/v1
 kind: Ingress

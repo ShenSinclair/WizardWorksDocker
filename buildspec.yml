@@ -1,4 +1,14 @@
 version: 0.2
 
-commands:
-      - kubectl apply -f config.yml
+phases:
+  pre_build:
+    commands:
+      - export KUBECONFIG=/root/.kube/config
+  build:
+    commands:
+      - echo "Deploying Kubernetes resources"
+      - kubectl apply -f 01-serviceaccount.yaml
+      - kubectl apply -f 02-clusterrolebinding.yaml
+      - kubectl apply -f 03-deployment.yaml
+      - kubectl apply -f 04-service.yaml
+      - kubectl apply -f 05-ingress.yaml

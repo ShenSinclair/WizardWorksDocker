@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simple-docker-app
+  labels:
+    app: simple-docker-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: simple-docker-app
+  template:
+    metadata:
+      labels:
+        app: simple-docker-app
+    spec:
+      serviceAccountName: wiz-app-serviceaccount
+      containers:
+        - name: simple-docker-app
+          image: 108782097787.dkr.ecr.us-east-2.amazonaws.com/simple-docker-service-0a37c0e6438d:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+            - name: SECRET_KEY
+              value: "3380d0d9db455d0efc71bf6ff3c06583ec2c0f10baf99a088f4570f48536adc0"
+            - name: MONGODB_URI
+              value: "mongodb://adminUser:WizardingWorld@3.138.178.233:27017/admin"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"

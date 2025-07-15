@@ -7,8 +7,8 @@ phases:
   build:
     commands:
       - echo "Deploying Kubernetes resources"
-      - kubectl apply -f manifests/01-serviceaccount.yaml
-      - kubectl apply -f manifests/02-clusterrolebinding.yaml
-      - kubectl apply -f manifests/03-deployment.yaml
-      - kubectl apply -f manifests/04-service.yaml
-      - kubectl apply -f manifests/05-ingress.yaml
+      - kubectl apply -f 01-serviceaccount.yaml
+      - kubectl apply -f 02-clusterrolebinding.yaml
+      - kubectl apply -f 03-deployment.yaml
+      - kubectl apply -f 04-service.yaml
+      - kubectl apply -f 05-ingress.yaml
